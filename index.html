@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Glitch — automatic keyboard language switching for macOS</title>
+<meta name="description" content="Glitch is a quiet macOS menu-bar utility that switches to the right keyboard input source for whatever app you focus. Local by design: no typed text observed, stored, or displayed." />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'%3E%3Cg fill='%23111113'%3E%3Cellipse cx='138' cy='112' rx='80' ry='58'/%3E%3Ccircle cx='78' cy='96' r='54'/%3E%3Cpath d='M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z'/%3E%3Crect x='96' y='150' width='28' height='48' rx='13'/%3E%3Crect x='156' y='150' width='28' height='48' rx='13'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  :root {
+    --canvas: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-elevated: #F5F5F7;
+    --ink: #111113;
+    --ink-secondary: #5F6368;
+    --ink-tertiary: #757575;
+    --border: #E3E3E6;
+    --border-strong: #C6C6C8;
+    --action: #0057D9;
+    --action-hover: #004AB8;
+    --on-action: #FFFFFF;
+    --elephant: #2B2F36;
+    --success-text: #0B6B2E;
+    --success-fill: #E7F6ED;
+    --code-bg: #1C1C1E;
+    --code-ink: #F5F5F7;
+    --code-accent: #64D2A2;
+    --shadow: 0 24px 60px rgba(17, 19, 21, 0.10);
+    --shadow-soft: 0 8px 24px rgba(17, 19, 21, 0.06);
+    --grid: rgba(17, 19, 21, 0.04);
+  }
+  html[data-theme="dark"] {
+    --canvas: #0F0F11;
+    --surface: #1C1C1E;
+    --surface-elevated: #2C2C2E;
+    --ink: #F5F5F7;
+    --ink-secondary: #C7C7CC;
+    --ink-tertiary: #A1A1A6;
+    --border: #2E2E31;
+    --border-strong: #48484A;
+    --action: #0B66EA;
+    --action-hover: #2B7CF0;
+    --on-action: #FFFFFF;
+    --elephant: #F5F5F7;
+    --success-text: #8DE6A8;
+    --success-fill: #153822;
+    --code-bg: #000000;
+    --code-ink: #F5F5F7;
+    --code-accent: #7BE0AC;
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --grid: rgba(255, 255, 255, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+      --canvas: #0F0F11;
+      --surface: #1C1C1E;
+      --surface-elevated: #2C2C2E;
+      --ink: #F5F5F7;
+      --ink-secondary: #C7C7CC;
+      --ink-tertiary: #A1A1A6;
+      --border: #2E2E31;
+      --border-strong: #48484A;
+      --action: #0B66EA;
+      --action-hover: #2B7CF0;
+      --on-action: #FFFFFF;
+      --elephant: #F5F5F7;
+      --success-text: #8DE6A8;
+      --success-fill: #153822;
+      --code-bg: #000000;
+      --code-ink: #F5F5F7;
+      --code-accent: #7BE0AC;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+      --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --grid: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    background: var(--canvas);
+    color: var(--ink);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  a { color: var(--action); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Top bar ---- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: color-mix(in srgb, var(--canvas) 78%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+  .brand .mark { width: 28px; height: 28px; color: var(--elephant); }
+  nav.links { display: flex; align-items: center; gap: 22px; }
+  nav.links a { color: var(--ink-secondary); font-size: 13.5px; font-weight: 500; }
+  nav.links a:hover { color: var(--ink); text-decoration: none; }
+  .theme-toggle {
+    width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-secondary); cursor: pointer;
+    display: grid; place-items: center; transition: color .12s, border-color .12s;
+  }
+  .theme-toggle:hover { color: var(--ink); border-color: var(--border-strong); }
+  @media (max-width: 720px) { nav.links a.nav-hide { display: none; } }
+
+  /* ---- Hero ---- */
+  .hero { position: relative; padding: 88px 0 64px; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+  @media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-secondary);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 999px; box-shadow: var(--shadow-soft);
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-text); }
+  h1 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+    font-size: clamp(34px, 5.4vw, 56px); line-height: 1.04; letter-spacing: -0.028em;
+    font-weight: 680; margin: 20px 0 0;
+  }
+  h1 .accent { color: var(--action); }
+  .lede { margin-top: 18px; font-size: clamp(16px, 2.1vw, 19px); color: var(--ink-secondary); max-width: 30ch; }
+
+  .cta-row { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; max-width: 460px; }
+  .install-cmd {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--code-bg); color: var(--code-ink);
+    border-radius: 12px; padding: 14px 14px 14px 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .install-cmd .prompt { color: var(--code-accent); user-select: none; }
+  .install-cmd code { flex: 1; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .install-cmd code::-webkit-scrollbar { display: none; }
+  .copy-btn {
+    flex-shrink: 0; border: 0; border-radius: 8px; cursor: pointer;
+    background: rgba(255,255,255,0.1); color: var(--code-ink);
+    width: 30px; height: 30px; display: grid; place-items: center; transition: background .12s;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.2); }
+  .copy-btn.copied { background: var(--success-text); color: #fff; }
+  .cta-second { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn-dmg {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--action); color: var(--on-action);
+    padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    transition: background .12s, transform .12s; box-shadow: var(--shadow-soft);
+  }
+  .btn-dmg:hover { background: var(--action-hover); text-decoration: none; transform: translateY(-1px); }
+  .req { font-size: 12.5px; color: var(--ink-tertiary); }
+
+  /* ---- Menu-bar mockup ---- */
+  .mock { position: relative; }
+  .menubar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .menubar-top {
+    display: flex; align-items: center; justify-content: flex-end; gap: 16px;
+    height: 30px; padding: 0 14px;
+    background: var(--surface-elevated); border-bottom: 1px solid var(--border);
+    color: var(--ink-tertiary); font-size: 12px;
+  }
+  .menubar-top .ele { width: 17px; height: 17px; color: var(--elephant); }
+  .menubar-top .clock { font-variant-numeric: tabular-nums; }
+  .menu {
+    padding: 8px; font-size: 13px;
+  }
+  .menu-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 7px; }
+  .menu-row .k { color: var(--ink-secondary); }
+  .menu-row .v { font-weight: 600; }
+  .menu-row.is-active { background: var(--action); color: var(--on-action); }
+  .menu-row.is-active .k { color: rgba(255,255,255,0.82); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip .src { transition: opacity .2s; }
+  .menu-sep { height: 1px; background: var(--border); margin: 6px 8px; }
+  .menu-foot { padding: 7px 10px; color: var(--success-text); font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .menu-foot .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-text); }
+
+  /* ---- Sections ---- */
+  section.block { padding: 72px 0; border-top: 1px solid var(--border); }
+  .sec-head { max-width: 60ch; margin-bottom: 40px; }
+  .sec-tag { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--action); }
+  .sec-head h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+    font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -0.02em; font-weight: 680; margin-top: 10px;
+  }
+  .sec-head p { margin-top: 12px; color: var(--ink-secondary); font-size: 16px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 24px; box-shadow: var(--shadow-soft);
+  }
+  .step .num {
+    width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--surface-elevated); color: var(--action); font-weight: 700; font-size: 15px;
+    border: 1px solid var(--border); margin-bottom: 16px; font-variant-numeric: tabular-nums;
+  }
+  .step h3 { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+  .step p { margin-top: 8px; color: var(--ink-secondary); font-size: 14px; }
+
+  .privacy {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    box-shadow: var(--shadow-soft); padding: 12px; display: grid;
+    grid-template-columns: repeat(2, 1fr); gap: 0;
+  }
+  @media (max-width: 720px) { .privacy { grid-template-columns: 1fr; } }
+  .p-item { display: flex; gap: 14px; padding: 18px; align-items: flex-start; }
+  .p-item .ic { flex-shrink: 0; width: 22px; height: 22px; color: var(--success-text); margin-top: 1px; }
+  .p-item h4 { font-size: 14.5px; font-weight: 650; }
+  .p-item p { margin-top: 4px; color: var(--ink-secondary); font-size: 13.5px; }
+
+  /* ---- Install section ---- */
+  .install-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
+  @media (max-width: 820px) { .install-grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 26px; box-shadow: var(--shadow-soft);
+  }
+  .card h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .card .lead { color: var(--ink-secondary); font-size: 14px; margin-top: 6px; }
+  ol.dolist, ul.dolist { margin-top: 16px; padding-left: 0; list-style: none; display: grid; gap: 10px; }
+  ol.dolist li, ul.dolist li { display: flex; gap: 10px; font-size: 13.5px; color: var(--ink-secondary); }
+  ol.dolist li .b, ul.dolist li .b { color: var(--ink); font-weight: 600; }
+  .tick { color: var(--success-text); flex-shrink: 0; }
+  .cmdline {
+    margin-top: 16px; background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+    padding: 12px 12px 12px 14px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cmdline .prompt { color: var(--code-accent); }
+  .cmdline code { flex: 1; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .cmdline code::-webkit-scrollbar { display: none; }
+  .note {
+    margin-top: 16px; font-size: 13px; color: var(--ink-secondary);
+    background: var(--surface-elevated); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .note b { color: var(--ink); }
+
+  /* ---- Footer ---- */
+  footer { border-top: 1px solid var(--border); padding: 40px 0 56px; color: var(--ink-tertiary); font-size: 13px; }
+  .foot-grid { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .foot-brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
+  .foot-brand .mark { width: 24px; height: 24px; color: var(--elephant); }
+  .checksum { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; word-break: break-all; color: var(--ink-tertiary); }
+
+  /* ---- Motion ---- */
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise .7s cubic-bezier(0.2,0,0,1) forwards; }
+  .d1 { animation-delay: .05s; } .d2 { animation-delay: .14s; } .d3 { animation-delay: .23s; }
+  .d4 { animation-delay: .32s; } .d5 { animation-delay: .41s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap bar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 240 200" aria-hidden="true" fill="currentColor">
+          <ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/>
+          <path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/>
+          <rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/>
+        </svg>
+        <span>Glitch</span>
+      </div>
+      <nav class="links">
+        <a class="nav-hide" href="#how">How it works</a>
+        <a class="nav-hide" href="#privacy">Privacy</a>
+        <a href="#install">Install</a>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme" title="Toggle theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v1.5M12 19.5V21M4.2 4.2l1 1M18.8 18.8l1 1M3 12h1.5M19.5 12H21M4.2 19.8l1-1M18.8 5.2l1-1"/><circle cx="12" cy="12" r="4"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow reveal d1"><span class="dot"></span>Private alpha · macOS</span>
+          <h1 class="reveal d2">The right keyboard<br>language, <span class="accent">already on.</span></h1>
+          <p class="lede reveal d3">Glitch is a quiet menu-bar utility that switches your Mac to the correct keyboard input source for whatever app you focus — before you start typing.</p>
+
+          <div class="cta-row reveal d4">
+            <div class="install-cmd">
+              <span class="prompt">$</span>
+              <code id="installCmd">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/install.sh | bash</code>
+              <button class="copy-btn" id="copyInstall" aria-label="Copy install command" title="Copy">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+            <div class="cta-second">
+              <a class="btn-dmg" id="dmgLink" href="https://github.com/tomerast/glitch-dist/releases/latest">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
+                Download the DMG
+              </a>
+              <span class="req">macOS 14+ · Apple Silicon &amp; Intel · <span id="verLabel">free, no account</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu-bar mockup -->
+        <div class="mock reveal d3" aria-hidden="true">
+          <div class="menubar">
+            <div class="menubar-top">
+              <svg class="ele" viewBox="0 0 240 200" fill="currentColor"><ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/><path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/><rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/></svg>
+              <span class="clock" id="clock">9:41</span>
+            </div>
+            <div class="menu">
+              <div class="menu-row is-active">
+                <span class="k">Current app</span>
+                <span class="v" id="mockApp">Messages</span>
+              </div>
+              <div class="menu-row">
+                <span class="k">Current input</span>
+                <span class="chip"><span class="src" id="mockSrc">Hebrew</span></span>
+              </div>
+              <div class="menu-row">
+                <span class="k">Profile</span>
+                <span class="v">Learned</span>
+              </div>
+              <div class="menu-sep"></div>
+              <div class="menu-row"><span class="k">Use Current Input For This App</span></div>
+              <div class="menu-row"><span class="k">Pause Globally</span></div>
+              <div class="menu-foot"><span class="dot"></span>Switching active · local only</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="block" id="how">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="sec-tag">How it works</span>
+          <h2>Deterministic, not magic.</h2>
+          <p>No machine learning, no cloud. Glitch learns your habits from local app and input-source usage, then sets the input source the moment focus changes.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal d1">
+            <div class="num">1</div>
+            <h3>You focus an app</h3>
+            <p>Glitch notices the foreground application change using standard macOS activation notifications — nothing about what you type.</p>
+          </div>
+          <div class="step reveal d2">
+            <div class="num">2</div>
+            <h3>It resolves the input source</h3>
+            <p>It looks up the keyboard input source you usually leave on for that app, learned from local usage or set by you as an app rule.</p>
+          </div>
+          <div class="step reveal d3">
+            <div class="num">3</div>
+            <h3>It switches before you type</h3>
+            <p>Glitch asks the system to switch the input source and verifies it took effect. Your manual changes always win.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRIVACY -->
+    <section class="block" id="privacy">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="sec-tag">Local by design</span>
+          <h2>It never reads what you write.</h2>
+          <p>Glitch is built so it <em>can't</em> spy on you. In this version there is no code that observes keystrokes, and no network code at all.</p>
+        </div>
+        <div class="privacy reveal d1">
+          <div class="p-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+            <div><h4>No typed text</h4><p>No typed text is observed, stored, or displayed. No Input Monitoring permission is requested.</p></div>
+          </div>
+          <div class="p-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/><path d="M5 19L19 5" stroke-width="2.4"/></svg>
+            <div><h4>No network</h4><p>No telemetry, no update pings, no servers. Normal runtime works fully offline.</p></div>
+          </div>
+          <div class="p-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 4v16"/></svg>
+            <div><h4>No clipboard, URLs, or titles</h4><p>No clipboard access, and no window titles, URLs, document names, or contact names are read or saved.</p></div>
+          </div>
+          <div class="p-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+            <div><h4>Your data stays here</h4><p>App rules and aggregate usage live in <code>~/Library/Application&nbsp;Support/Glitch</code> — yours to inspect or delete.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="block" id="install">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="sec-tag">Get Glitch</span>
+          <h2>Two ways to install.</h2>
+          <p>The one-line installer is the smoothest path. Prefer dragging an app? Use the DMG.</p>
+        </div>
+
+        <div class="install-grid">
+          <div class="card reveal d1">
+            <h3>One-line install</h3>
+            <p class="lead">Recommended. Paste this into Terminal — it handles everything, including the unsigned-app step for you.</p>
+            <div class="cmdline">
+              <span class="prompt">$</span>
+              <code id="installCmd2">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/install.sh | bash</code>
+              <button class="copy-btn" id="copyInstall2" aria-label="Copy install command" title="Copy">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+            </div>
+            <ul class="dolist">
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span><span class="b">Verifies the checksum</span> before installing.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Installs <span class="b">Glitch.app</span> to your Applications folder.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Clears the quarantine flag, so <span class="b">no "Open Anyway" dance.</span></span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Enables <span class="b">launch at login</span> and starts the app.</span></li>
+            </ul>
+          </div>
+
+          <div class="card reveal d2">
+            <h3>Manual DMG</h3>
+            <p class="lead">Download, open, and drag Glitch into Applications.</p>
+            <a class="btn-dmg" id="dmgLink2" href="https://github.com/tomerast/glitch-dist/releases/latest" style="margin-top:16px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
+              Download the DMG
+            </a>
+            <div class="note">
+              <b>First launch:</b> because this build is unsigned, macOS blocks it once. Open <b>System&nbsp;Settings → Privacy &amp; Security</b>, scroll to the bottom, and click <b>Open Anyway</b>. (The one-line installer skips this entirely.)
+            </div>
+          </div>
+        </div>
+
+        <div class="card reveal d3" style="margin-top:24px;">
+          <h3>Uninstalling</h3>
+          <p class="lead">Removes the app and launch-at-login. Your local data is kept unless you add <code>GLITCH_PURGE=1</code>.</p>
+          <div class="cmdline">
+            <span class="prompt">$</span>
+            <code id="uninstallCmd">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/uninstall.sh | bash</code>
+            <button class="copy-btn" id="copyUninstall" aria-label="Copy uninstall command" title="Copy">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot-grid">
+      <div>
+        <div class="foot-brand">
+          <svg class="mark" viewBox="0 0 240 200" fill="currentColor"><ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/><path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/><rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/></svg>
+          <span>Glitch</span>
+        </div>
+        <p style="margin-top:10px; max-width: 46ch;">Automatic keyboard language switching for macOS. Private alpha — unsigned build, intended for testers. Not notarized.</p>
+      </div>
+      <div style="text-align:right;">
+        <div id="footVer">Latest build</div>
+        <div class="checksum" id="footChecksum" style="margin-top:6px; max-width: 360px;"></div>
+        <div style="margin-top:10px;"><a id="releasesLink" href="https://github.com/tomerast/glitch-dist/releases">All releases &amp; checksums →</a></div>
+      </div>
+    </div>
+  </footer>
+
+<script>
+(function () {
+  var DIST_REPO = "tomerast/glitch-dist";
+
+  // ---- Theme toggle (auto -> light -> dark) ----
+  var root = document.documentElement;
+  var saved = localStorage.getItem("glitch-theme");
+  if (saved) root.setAttribute("data-theme", saved);
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var order = ["auto", "light", "dark"];
+    var cur = root.getAttribute("data-theme") || "auto";
+    var next = order[(order.indexOf(cur) + 1) % order.length];
+    root.setAttribute("data-theme", next);
+    localStorage.setItem("glitch-theme", next);
+  });
+
+  // ---- Copy buttons ----
+  function wireCopy(btnId, srcId) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(srcId).textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        btn.classList.add("copied");
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg>';
+        setTimeout(function () {
+          btn.classList.remove("copied");
+          btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+        }, 1600);
+      });
+    });
+  }
+  wireCopy("copyInstall", "installCmd");
+  wireCopy("copyInstall2", "installCmd2");
+  wireCopy("copyUninstall", "uninstallCmd");
+
+  // ---- Live clock in the mockup ----
+  function tick() {
+    var d = new Date();
+    var h = d.getHours() % 12 || 12;
+    var m = String(d.getMinutes()).padStart(2, "0");
+    var el = document.getElementById("clock");
+    if (el) el.textContent = h + ":" + m;
+  }
+  tick(); setInterval(tick, 10000);
+
+  // ---- Gentle "switching" demo in the mockup ----
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) {
+    var scenes = [
+      { app: "Messages", src: "Hebrew" },
+      { app: "Xcode", src: "ABC" },
+      { app: "Mail", src: "Hebrew" },
+      { app: "Safari", src: "ABC" }
+    ];
+    var i = 0;
+    var appEl = document.getElementById("mockApp");
+    var srcEl = document.getElementById("mockSrc");
+    setInterval(function () {
+      i = (i + 1) % scenes.length;
+      srcEl.style.opacity = 0; appEl.style.opacity = 0.35;
+      setTimeout(function () {
+        appEl.textContent = scenes[i].app;
+        srcEl.textContent = scenes[i].src;
+        srcEl.style.opacity = 1; appEl.style.opacity = 1;
+      }, 220);
+    }, 2600);
+  }
+
+  // ---- Pull latest release info (version, DMG link, checksum) ----
+  fetch("https://api.github.com/repos/" + DIST_REPO + "/releases?per_page=1", {
+    headers: { "Accept": "application/vnd.github+json" }
+  })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (list) {
+      if (!list || !list.length) return;
+      var rel = list[0];
+      var dmg = (rel.assets || []).filter(function (a) { return /\.dmg$/.test(a.name); })[0];
+      if (dmg) {
+        document.getElementById("dmgLink").href = dmg.browser_download_url;
+        document.getElementById("dmgLink2").href = dmg.browser_download_url;
+      }
+      var tag = rel.tag_name || rel.name;
+      if (tag) {
+        document.getElementById("verLabel").textContent = tag + " · free";
+        document.getElementById("footVer").textContent = "Latest: " + tag;
+      }
+    })
+    .catch(function () { /* offline or rate-limited: keep static fallbacks */ });
+})();
+</script>
+</body>
+</html>
