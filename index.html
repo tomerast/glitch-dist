@@ -6,7 +6,7 @@
 <title>Glitch — automatic keyboard language switching for macOS</title>
 <meta name="description" content="Glitch is a quiet macOS menu-bar utility that switches to the right keyboard input source for whatever app you focus. Local by design: no typed text observed, stored, or displayed." />
 <meta name="color-scheme" content="light dark" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'%3E%3Cg fill='%23111113'%3E%3Cellipse cx='138' cy='112' rx='80' ry='58'/%3E%3Ccircle cx='78' cy='96' r='54'/%3E%3Cpath d='M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z'/%3E%3Crect x='96' y='150' width='28' height='48' rx='13'/%3E%3Crect x='156' y='150' width='28' height='48' rx='13'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="icon" type="image/png" href="glitch-mark.png" />
 <style>
   :root {
     --canvas: #FAFAFA;
@@ -101,7 +101,13 @@
   }
   .bar { display: flex; align-items: center; justify-content: space-between; height: 56px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
-  .brand .mark { width: 28px; height: 28px; color: var(--elephant); }
+  /* The brand elephant is a single transparent PNG, tinted via mask so it adapts to light/dark. */
+  .mark, .ele {
+    display: inline-block; background-color: var(--elephant);
+    -webkit-mask: url("glitch-mark.png") center / contain no-repeat;
+    mask: url("glitch-mark.png") center / contain no-repeat;
+  }
+  .brand .mark { width: 32px; height: 25px; }
   nav.links { display: flex; align-items: center; gap: 22px; }
   nav.links a { color: var(--ink-secondary); font-size: 13.5px; font-weight: 500; }
   nav.links a:hover { color: var(--ink); text-decoration: none; }
@@ -183,7 +189,7 @@
     background: var(--surface-elevated); border-bottom: 1px solid var(--border);
     color: var(--ink-tertiary); font-size: 12px;
   }
-  .menubar-top .ele { width: 17px; height: 17px; color: var(--elephant); }
+  .menubar-top .ele { width: 21px; height: 17px; }
   .menubar-top .clock { font-variant-numeric: tabular-nums; }
   .menu {
     padding: 8px; font-size: 13px;
@@ -271,7 +277,7 @@
   footer { border-top: 1px solid var(--border); padding: 40px 0 56px; color: var(--ink-tertiary); font-size: 13px; }
   .foot-grid { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
   .foot-brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 600; }
-  .foot-brand .mark { width: 24px; height: 24px; color: var(--elephant); }
+  .foot-brand .mark { width: 28px; height: 22px; }
   .checksum { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; word-break: break-all; color: var(--ink-tertiary); }
 
   /* ---- Motion ---- */
@@ -289,11 +295,7 @@
   <header>
     <div class="wrap bar">
       <div class="brand">
-        <svg class="mark" viewBox="0 0 240 200" aria-hidden="true" fill="currentColor">
-          <ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/>
-          <path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/>
-          <rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/>
-        </svg>
+        <span class="mark" aria-hidden="true"></span>
         <span>Glitch</span>
       </div>
       <nav class="links">
@@ -338,17 +340,17 @@
         <div class="mock reveal d3" aria-hidden="true">
           <div class="menubar">
             <div class="menubar-top">
-              <svg class="ele" viewBox="0 0 240 200" fill="currentColor"><ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/><path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/><rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/></svg>
+              <span class="ele"></span>
               <span class="clock" id="clock">9:41</span>
             </div>
             <div class="menu">
               <div class="menu-row is-active">
                 <span class="k">Current app</span>
-                <span class="v" id="mockApp">Messages</span>
+                <span class="v" id="mockApp">WeChat</span>
               </div>
               <div class="menu-row">
                 <span class="k">Current input</span>
-                <span class="chip"><span class="src" id="mockSrc">Hebrew</span></span>
+                <span class="chip"><span class="src" id="mockSrc">Pinyin</span></span>
               </div>
               <div class="menu-row">
                 <span class="k">Profile</span>
@@ -481,7 +483,7 @@
     <div class="wrap foot-grid">
       <div>
         <div class="foot-brand">
-          <svg class="mark" viewBox="0 0 240 200" fill="currentColor"><ellipse cx="138" cy="112" rx="80" ry="58"/><circle cx="78" cy="96" r="54"/><path d="M40 92 C10 108 14 152 32 170 C44 182 60 178 60 160 C60 150 50 150 50 138 C50 120 60 110 70 102 Z"/><rect x="96" y="150" width="28" height="48" rx="13"/><rect x="156" y="150" width="28" height="48" rx="13"/></svg>
+          <span class="mark" aria-hidden="true"></span>
           <span>Glitch</span>
         </div>
         <p style="margin-top:10px; max-width: 46ch;">Automatic keyboard language switching for macOS. Private alpha — unsigned build, intended for testers. Not notarized.</p>
@@ -544,9 +546,9 @@
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!reduce) {
     var scenes = [
-      { app: "Messages", src: "Hebrew" },
+      { app: "WeChat", src: "Pinyin" },
       { app: "Xcode", src: "ABC" },
-      { app: "Mail", src: "Hebrew" },
+      { app: "Telegram", src: "Russian" },
       { app: "Safari", src: "ABC" }
     ];
     var i = 0;
