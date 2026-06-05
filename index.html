@@ -327,7 +327,7 @@
               </button>
             </div>
             <div class="cta-second">
-              <a class="btn-dmg" id="dmgLink" href="https://github.com/tomerast/glitch-dist/releases/latest">
+              <a class="btn-dmg" id="dmgLink" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-macOS.dmg">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
                 Download the DMG
               </a>
@@ -454,7 +454,7 @@
           <div class="card reveal d2">
             <h3>Manual DMG</h3>
             <p class="lead">Download, open, and drag Glitch into Applications.</p>
-            <a class="btn-dmg" id="dmgLink2" href="https://github.com/tomerast/glitch-dist/releases/latest" style="margin-top:16px;">
+            <a class="btn-dmg" id="dmgLink2" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-macOS.dmg" style="margin-top:16px;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
               Download the DMG
             </a>
@@ -565,26 +565,22 @@
     }, 2600);
   }
 
-  // ---- Pull latest release info (version, DMG link, checksum) ----
-  fetch("https://api.github.com/repos/" + DIST_REPO + "/releases?per_page=1", {
+  // ---- Show the current version label ----
+  // The download buttons already point at the stable, auto-updating
+  // releases/latest/download/ URLs, so JS only refreshes the version text.
+  fetch("https://api.github.com/repos/" + DIST_REPO + "/releases/latest", {
     headers: { "Accept": "application/vnd.github+json" }
   })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (list) {
-      if (!list || !list.length) return;
-      var rel = list[0];
-      var dmg = (rel.assets || []).filter(function (a) { return /\.dmg$/.test(a.name); })[0];
-      if (dmg) {
-        document.getElementById("dmgLink").href = dmg.browser_download_url;
-        document.getElementById("dmgLink2").href = dmg.browser_download_url;
-      }
+    .then(function (rel) {
+      if (!rel) return;
       var tag = rel.tag_name || rel.name;
       if (tag) {
         document.getElementById("verLabel").textContent = tag + " · free";
         document.getElementById("footVer").textContent = "Latest: " + tag;
       }
     })
-    .catch(function () { /* offline or rate-limited: keep static fallbacks */ });
+    .catch(function () { /* offline or rate-limited: keep static labels */ });
 })();
 </script>
 </body>
