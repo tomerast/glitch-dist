@@ -265,6 +265,10 @@
   .cmdline .prompt { color: var(--code-accent); }
   .cmdline code { flex: 1; min-width: 0; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
   .cmdline code::-webkit-scrollbar { display: none; }
+  .cmd-label {
+    margin-top: 18px; color: var(--ink); font-size: 13px; font-weight: 650;
+  }
+  .cmd-label + .cmdline { margin-top: 7px; }
   .note {
     margin-top: 16px; font-size: 13px; color: var(--ink-secondary);
     background: var(--surface-elevated); border: 1px solid var(--border);
@@ -473,6 +477,7 @@
         <div class="card reveal d3" style="margin-top:24px;">
           <h3>Uninstalling</h3>
           <p class="lead">Both uninstallers remove the app and startup entry while keeping local profiles by default.</p>
+          <div class="cmd-label">macOS</div>
           <div class="cmdline">
             <span class="prompt">$</span>
             <code id="uninstallCmd">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/uninstall.sh | bash</code>
@@ -480,6 +485,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
             </button>
           </div>
+          <div class="cmd-label">Windows</div>
           <div class="cmdline">
             <span class="prompt">PS&gt;</span>
             <code id="windowsUninstallCmd">&amp; ([scriptblock]::Create((irm https://raw.githubusercontent.com/tomerast/glitch-dist/main/uninstall-windows.ps1)))</code>
