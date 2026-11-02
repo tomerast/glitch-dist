@@ -246,11 +246,10 @@
   .p-item p { margin-top: 4px; color: var(--ink-secondary); font-size: 13.5px; }
 
   /* ---- Install section ---- */
-  .install-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
-  @media (max-width: 820px) { .install-grid { grid-template-columns: 1fr; } }
+  .install-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 26px; box-shadow: var(--shadow-soft);
+    min-width: 0; padding: 26px; box-shadow: var(--shadow-soft);
   }
   .card h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
   .card .lead { color: var(--ink-secondary); font-size: 14px; margin-top: 6px; }
@@ -261,10 +260,10 @@
   .cmdline {
     margin-top: 16px; background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
     padding: 12px 12px 12px 14px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px;
-    display: flex; align-items: center; gap: 10px;
+    min-width: 0; display: flex; align-items: center; gap: 10px;
   }
   .cmdline .prompt { color: var(--code-accent); }
-  .cmdline code { flex: 1; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .cmdline code { flex: 1; min-width: 0; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
   .cmdline code::-webkit-scrollbar { display: none; }
   .note {
     margin-top: 16px; font-size: 13px; color: var(--ink-secondary);
