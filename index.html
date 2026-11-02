@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Glitch — automatic keyboard language switching for macOS</title>
-<meta name="description" content="Glitch is a quiet macOS menu-bar utility that switches to the right keyboard input source for whatever app you focus. Local by design: no typed text observed, stored, or displayed." />
+<title>Glitch — automatic keyboard language switching</title>
+<meta name="description" content="Glitch is a quiet macOS and Windows utility that switches to the right keyboard input source for whatever app you focus. Local by design: no typed text observed, stored, or displayed." />
 <meta name="color-scheme" content="light dark" />
 <link rel="icon" type="image/png" href="glitch-mark.png" />
 <style>
@@ -314,25 +314,22 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <span class="eyebrow reveal d1"><span class="dot"></span>Private alpha · macOS</span>
+          <span class="eyebrow reveal d1"><span class="dot"></span>Private alpha · macOS &amp; Windows</span>
           <h1 class="reveal d2">The right keyboard<br>language, <span class="accent">already on.</span></h1>
-          <p class="lede reveal d3">Glitch is a quiet menu-bar utility that switches your Mac to the correct keyboard input source for whatever app you focus — before you start typing.</p>
+          <p class="lede reveal d3">Glitch is a quiet tray utility that switches macOS or Windows to the correct keyboard input source for whatever app you focus — before you start typing.</p>
 
           <div class="cta-row reveal d4">
-            <div class="install-cmd">
-              <span class="prompt">$</span>
-              <code id="installCmd">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/install.sh | bash</code>
-              <button class="copy-btn" id="copyInstall" aria-label="Copy install command" title="Copy">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-            </div>
             <div class="cta-second">
               <a class="btn-dmg" id="dmgLink" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-macOS.dmg">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
-                Download the DMG
+                macOS DMG
               </a>
-              <span class="req">macOS 14+ · Apple Silicon &amp; Intel · <span id="verLabel">free, no account</span></span>
+              <a class="btn-dmg" id="windowsLink" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-Windows-x64.zip">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
+                Windows ZIP
+              </a>
             </div>
+            <span class="req">macOS 14+ or Windows 11 · private alpha · <span id="verLabel">free, no account</span></span>
           </div>
         </div>
 
@@ -378,7 +375,7 @@
           <div class="step reveal d1">
             <div class="num">1</div>
             <h3>You focus an app</h3>
-            <p>Glitch notices the foreground application change using standard macOS activation notifications — nothing about what you type.</p>
+            <p>Glitch notices foreground application changes through standard macOS or Windows APIs — nothing about what you type.</p>
           </div>
           <div class="step reveal d2">
             <div class="num">2</div>
@@ -417,7 +414,7 @@
           </div>
           <div class="p-item">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
-            <div><h4>Your data stays here</h4><p>App rules and aggregate usage live in <code>~/Library/Application&nbsp;Support/Glitch</code> — yours to inspect or delete.</p></div>
+            <div><h4>Your data stays here</h4><p>App rules and aggregate usage stay in your local Glitch data folder on macOS or Windows — yours to inspect or delete.</p></div>
           </div>
         </div>
       </div>
@@ -428,14 +425,14 @@
       <div class="wrap">
         <div class="sec-head reveal">
           <span class="sec-tag">Get Glitch</span>
-          <h2>Two ways to install.</h2>
-          <p>The one-line installer is the smoothest path. Prefer dragging an app? Use the DMG.</p>
+          <h2>Choose your platform.</h2>
+          <p>Both private-alpha builds are unsigned. The installers require checksum verification and leave operating-system security protections enabled.</p>
         </div>
 
         <div class="install-grid">
           <div class="card reveal d1">
-            <h3>One-line install</h3>
-            <p class="lead">Recommended. Paste this into Terminal — it handles everything, including the unsigned-app step for you.</p>
+            <h3>macOS 14+</h3>
+            <p class="lead">Paste this into Terminal, or download the DMG and drag Glitch into Applications.</p>
             <div class="cmdline">
               <span class="prompt">$</span>
               <code id="installCmd2">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/install.sh | bash</code>
@@ -444,33 +441,50 @@
               </button>
             </div>
             <ul class="dolist">
-              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span><span class="b">Verifies the checksum</span> before installing.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span><span class="b">Requires the SHA-256 corruption check</span> before installing.</span></li>
               <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Installs <span class="b">Glitch.app</span> to your Applications folder.</span></li>
-              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Clears the quarantine flag, so <span class="b">no "Open Anyway" dance.</span></span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Leaves <span class="b">Gatekeeper and quarantine enabled</span>.</span></li>
               <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg><span>Enables <span class="b">launch at login</span> and starts the app.</span></li>
             </ul>
+            <a class="btn-dmg" id="dmgLink2" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-macOS.dmg" style="margin-top:16px;">Download the DMG</a>
+            <div class="note"><b>Unsigned build:</b> follow the explicit macOS <b>Open Anyway</b> prompt if shown. The installer does not bypass it.</div>
           </div>
 
           <div class="card reveal d2">
-            <h3>Manual DMG</h3>
-            <p class="lead">Download, open, and drag Glitch into Applications.</p>
-            <a class="btn-dmg" id="dmgLink2" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-macOS.dmg" style="margin-top:16px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg>
-              Download the DMG
-            </a>
-            <div class="note">
-              <b>First launch:</b> because this build is unsigned, macOS blocks it once. Open <b>System&nbsp;Settings → Privacy &amp; Security</b>, scroll to the bottom, and click <b>Open Anyway</b>. (The one-line installer skips this entirely.)
+            <h3>Windows 11</h3>
+            <p class="lead">Paste this into Windows PowerShell or PowerShell 7. It installs per-user, with no administrator access required.</p>
+            <div class="cmdline">
+              <span class="prompt">PS&gt;</span>
+              <code id="windowsInstallCmd">&amp; ([scriptblock]::Create((irm https://raw.githubusercontent.com/tomerast/glitch-dist/main/install-windows.ps1)))</code>
+              <button class="copy-btn" id="copyWindowsInstall" aria-label="Copy Windows install command" title="Copy">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
             </div>
+            <ul class="dolist">
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg><span>Requires the ZIP's <span class="b">SHA-256 corruption check</span>.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg><span>Installs under <span class="b">LocalAppData\Programs\Glitch</span>.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg><span>Adds Start Menu and <span class="b">launch at sign-in</span> shortcuts.</span></li>
+              <li><svg class="tick" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg><span>Does not call Unblock-File or suppress <span class="b">SmartScreen</span>.</span></li>
+            </ul>
+            <a class="btn-dmg" href="https://github.com/tomerast/glitch-dist/releases/latest/download/Glitch-Windows-x64.zip" style="margin-top:16px;">Download the Windows ZIP</a>
+            <div class="note"><b>Unsigned build:</b> Windows may warn before launch. Review the publisher information and proceed only if you trust this private-alpha source.</div>
           </div>
         </div>
 
         <div class="card reveal d3" style="margin-top:24px;">
           <h3>Uninstalling</h3>
-          <p class="lead">Removes the app and launch-at-login. Your local data is kept unless you add <code>GLITCH_PURGE=1</code>.</p>
+          <p class="lead">Both uninstallers remove the app and startup entry while keeping local profiles by default.</p>
           <div class="cmdline">
             <span class="prompt">$</span>
             <code id="uninstallCmd">curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/uninstall.sh | bash</code>
             <button class="copy-btn" id="copyUninstall" aria-label="Copy uninstall command" title="Copy">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            </button>
+          </div>
+          <div class="cmdline">
+            <span class="prompt">PS&gt;</span>
+            <code id="windowsUninstallCmd">&amp; ([scriptblock]::Create((irm https://raw.githubusercontent.com/tomerast/glitch-dist/main/uninstall-windows.ps1)))</code>
+            <button class="copy-btn" id="copyWindowsUninstall" aria-label="Copy Windows uninstall command" title="Copy">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
             </button>
           </div>
@@ -486,7 +500,7 @@
           <span class="mark" aria-hidden="true"></span>
           <span>Glitch</span>
         </div>
-        <p style="margin-top:10px; max-width: 46ch;">Automatic keyboard language switching for macOS. Private alpha — unsigned build, intended for testers. Not notarized.</p>
+        <p style="margin-top:10px; max-width: 46ch;">Automatic keyboard language switching for macOS and Windows. Private-alpha builds are unsigned and intended for invited testers.</p>
       </div>
       <div style="text-align:right;">
         <div id="footVer">Latest build</div>
@@ -528,9 +542,10 @@
       });
     });
   }
-  wireCopy("copyInstall", "installCmd");
   wireCopy("copyInstall2", "installCmd2");
   wireCopy("copyUninstall", "uninstallCmd");
+  wireCopy("copyWindowsInstall", "windowsInstallCmd");
+  wireCopy("copyWindowsUninstall", "windowsUninstallCmd");
 
   // ---- Live clock in the mockup ----
   function tick() {

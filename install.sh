@@ -2,8 +2,8 @@
 #
 # Glitch installer for macOS.
 #
-# Installs Glitch to /Applications, removes the quarantine flag (the private-alpha
-# build is unsigned), enables launch at login, and starts the app.
+# Installs Glitch to /Applications, leaves Gatekeeper and quarantine protections
+# unchanged, enables launch at login, and starts the app.
 #
 # Testers install with one line (no repo access, no Apple account needed):
 #   curl -fsSL https://raw.githubusercontent.com/tomerast/glitch-dist/main/install.sh | bash
@@ -54,8 +54,7 @@ require_macos() {
 verify_checksum() {
   local zip="$1" sum_file="$1.sha256"
   if [ ! -f "$sum_file" ]; then
-    warn "no checksum file found; skipping verification"
-    return
+    die "required checksum file not found: $sum_file"
   fi
   # Compare hashes directly so verification does not depend on the filename
   # recorded inside the .sha256 file (the asset is renamed during download).
@@ -63,7 +62,7 @@ verify_checksum() {
   expected="$(awk 'NR==1{print $1}' "$sum_file")"
   actual="$(shasum -a 256 "$zip" | awk '{print $1}')"
   if [ -n "$expected" ] && [ "$expected" = "$actual" ]; then
-    step "checksum verified"
+    step "archive corruption check passed (SHA-256)"
   else
     die "checksum verification failed for $(basename "$zip")"
   fi
@@ -75,16 +74,18 @@ acquire_zip() {
 
   if [ -n "$LOCAL_ZIP" ]; then
     [ -f "$LOCAL_ZIP" ] || die "file not found: $LOCAL_ZIP"
+    [ -f "$LOCAL_ZIP.sha256" ] || die "required checksum file not found: $LOCAL_ZIP.sha256"
     step "using local archive: $LOCAL_ZIP"
     cp "$LOCAL_ZIP" "$dest"
-    [ -f "$LOCAL_ZIP.sha256" ] && cp "$LOCAL_ZIP.sha256" "$dest.sha256"
+    cp "$LOCAL_ZIP.sha256" "$dest.sha256"
     return
   fi
 
   if [ -n "${GLITCH_ZIP_URL:-}" ]; then
     step "downloading: $GLITCH_ZIP_URL"
     curl -fL --progress-bar "$GLITCH_ZIP_URL" -o "$dest" || die "download failed"
-    curl -fsSL "$GLITCH_ZIP_URL.sha256" -o "$dest.sha256" 2>/dev/null || true
+    curl -fsSL "$GLITCH_ZIP_URL.sha256" -o "$dest.sha256" \
+      || die "required checksum download failed"
     return
   fi
 
@@ -104,8 +105,9 @@ acquire_zip() {
     local found
     found="$(/bin/ls "$ghdir"/*.zip 2>/dev/null | head -n1 || true)"
     [ -n "$found" ] || die "no .zip asset found in the release"
+    [ -f "$found.sha256" ] || die "release is missing the required checksum asset"
     mv "$found" "$dest"
-    [ -f "$found.sha256" ] && mv "$found.sha256" "$dest.sha256"
+    mv "$found.sha256" "$dest.sha256"
     return
   fi
 
@@ -118,7 +120,8 @@ acquire_zip() {
   [ -n "$url" ] || die "could not find a release asset (private repo? install GitHub CLI 'gh' or pass a local .zip)"
   step "downloading: $url"
   curl -fL --progress-bar "$url" -o "$dest" || die "download failed"
-  curl -fsSL "$url.sha256" -o "$dest.sha256" 2>/dev/null || true
+  curl -fsSL "$url.sha256" -o "$dest.sha256" \
+    || die "required checksum download failed"
 }
 
 stop_running() {
@@ -140,8 +143,7 @@ install_app() {
   ditto "$staged/$APP_NAME" "$INSTALLED_APP"
   step "installed to $INSTALLED_APP"
 
-  xattr -dr com.apple.quarantine "$INSTALLED_APP" 2>/dev/null || true
-  step "cleared quarantine flag (unsigned alpha build)"
+  step "left Gatekeeper and quarantine protections unchanged"
 }
 
 enable_autostart() {
@@ -211,8 +213,11 @@ main() {
 
   printf '\n%sGlitch is installed and running.%s\n' "$BOLD$GREEN" "$RESET"
   printf 'Look for the Glitch icon in your menu bar (top-right). It has no Dock icon.\n'
+  printf 'This private-alpha build is unsigned; follow any macOS security prompt explicitly.\n'
   [ "${GLITCH_NO_AUTOSTART:-0}" != "1" ] && printf 'It will start automatically when you log in.\n'
   printf '%sTo uninstall later, run scripts/uninstall.sh from the repo (or the release asset).%s\n' "$DIM" "$RESET"
 }
 
-main "$@"
+if [ "${GLITCH_INSTALLER_SOURCE_ONLY:-0}" != "1" ]; then
+  main "$@"
+fi
